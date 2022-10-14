@@ -1,0 +1,10 @@
+{
+  "short_name": "TS APP",
+  "name": "TS APP",
+  "icons": [
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
