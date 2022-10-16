@@ -50,4 +50,17 @@ public class TimeSeries {
     
     int version;
 
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getPowerStation());
+		sb.append("; ");
+		sb.append(getDate());
+		sb.append("; ");
+		sb.append(getVersion());
+		return sb.toString();
+	}
+
+    
+    
 }
