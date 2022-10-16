@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -12,6 +14,7 @@ import javax.persistence.Id;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.reg.time_series.sevice.SeriesConverter;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -46,6 +49,9 @@ public class TimeSeries {
 	
     String period;
 	
+//    @Column(columnDefinition = "BLOB", length = 2000)
+    @Column(length = 2000)
+    @Convert(converter = SeriesConverter.class)
     ArrayList<Long> series;
     
     int version;

@@ -1,9 +1,11 @@
 package com.reg.time_series.controller;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.reg.time_series.entity.TimeSeries;
+import com.reg.time_series.entity.TimeSeriesRepository;
 
 
 
@@ -32,8 +35,10 @@ public class TimeSeriesController {
 	
 	public static final String MSG_DATA_NOT_PARSERABLE = "Data not parserable";
 	public static final String MSG_NO_DATA_RECEIVED = "No data received.";
-	
 	private static final Logger logger = LoggerFactory.getLogger(TimeSeriesController.class);
+	
+	@Autowired
+	private TimeSeriesRepository timeSeriesRepository;
 	
 	@PutMapping(value = "/upload", consumes = { MediaType.APPLICATION_JSON_VALUE }, produces = {MediaType.APPLICATION_JSON_VALUE })
 	public ResponseEntity<String> uploadTimeSeries(@RequestBody String jsonString) {
@@ -48,6 +53,7 @@ public class TimeSeriesController {
 				timeSeries = objectMapper.readValue(jsonString, TimeSeries.class);
 				resultOK = true;
 				message = timeSeries.toString();
+				timeSeriesRepository.save(timeSeries);
 			} catch (JsonProcessingException e) {
 				logger.debug("Json parsing error:", e);
 				resultOK = false;
