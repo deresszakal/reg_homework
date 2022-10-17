@@ -1,17 +1,11 @@
-/**
- * 
- */
-package com.reg.time_series.controller;
+package com.reg.time_series.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,45 +18,46 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.reg.time_series.entity.TimeSeries;
 import com.reg.time_series.entity.TimeSeriesRepository;
+import com.reg.time_series.sevice.TimeSeriesService;
 
 import io.restassured.RestAssured;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
-import static org.hamcrest.CoreMatchers.containsString;
-
-/**
- * @author phars
- *
- */
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class TimeSeriesControllerTest {
-	
+class TimeSeriesServiceTest {
+
     @LocalServerPort
     int port;
 
     @Autowired
     private WebApplicationContext webApplicationContext;
-
+    
     @Autowired
     private TimeSeriesRepository timeSeriesRepository;
     
-    private static DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    @Autowired
+    TimeSeriesService timeSeriesService;
 
+    private static DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    
     @BeforeEach
     public void initAssuredMockMvcWebApplicationContext() {
         RestAssured.port = port;
         RestAssuredMockMvc.webAppContextSetup(webApplicationContext);
     }
-    
+
     @Test
     @Order(0)
     public void clean() {
@@ -72,96 +67,68 @@ public class TimeSeriesControllerTest {
     
     @Test
     @Order(1)
-	public void upload_jsonFile() {
-		RestAssured
-		  .given()
-		  	.contentType(MediaType.APPLICATION_JSON_VALUE)
-	        .body(jsonString)
-		  .when().put("/timeseries/upload").then()
-		  	.statusCode(HttpStatus.OK.value());
+	public void nextVersionNotExistTimeSeries() throws JsonMappingException, JsonProcessingException {
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new JavaTimeModule());
+		TimeSeries timeSeries = null;
+		try {
+			timeSeries = objectMapper.readValue(jsonString, TimeSeries.class);
+			int newVersion = timeSeriesService.getFreeVersionNumber(timeSeries.getPowerStation(), timeSeries.getDate());
+			timeSeries.setVersion(newVersion);
+			timeSeries = timeSeriesRepository.save(timeSeries);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		assertThat(timeSeries.getVersion()).isEqualTo(1);
 	}
 
     @Test
     @Order(2)
-    public void upload_emptyBody() {
-    	RestAssured
-    	.given()
-    		.contentType(MediaType.APPLICATION_JSON_VALUE)
-    	.when().put("/timeseries/upload")
-    	.then().assertThat()
-    		.statusCode(HttpStatus.BAD_REQUEST.value())
-    		.body(containsString("Bad Request"));
+    public void nextVersionExistOneTimeSeries() throws JsonMappingException, JsonProcessingException {
+    	ObjectMapper objectMapper = new ObjectMapper();
+    	objectMapper.registerModule(new JavaTimeModule());
+    	TimeSeries timeSeries = null;
+    	try {
+    		timeSeries = addOneTimeSeries(objectMapper, "1999-06-28 14:12:24");
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	assertThat(timeSeries.getVersion()).isEqualTo(2);
     }
     
     @Test
-    @Order(3)
-    public void upload_uncorrectJsonDateFormat() {
-    	jsonString = jsonString.replaceAll("(?<=[\\d\\.])-(?=[\\d\\.])", "\\$");
-    	RestAssured
-    	.given()
-    		.contentType(MediaType.APPLICATION_JSON_VALUE)
-    		.body(jsonString)
-    	.when().put("/timeseries/upload")
-    	.then().assertThat()
-			.statusCode(HttpStatus.BAD_REQUEST.value())
-			.body(containsString(TimeSeriesController.MSG_DATA_NOT_PARSERABLE));
+    @Order(2)
+    public void nextVersionExistFourTimeSeries() throws JsonMappingException, JsonProcessingException {
+    	ObjectMapper objectMapper = new ObjectMapper();
+    	objectMapper.registerModule(new JavaTimeModule());
+    	TimeSeries timeSeries = null;
+    	try {
+    		timeSeries = addOneTimeSeries(objectMapper, "1999-06-28 15:17:33");
+    		timeSeries = addOneTimeSeries(objectMapper, "1999-06-28 17:45:12");
+    		timeSeries = addOneTimeSeries(objectMapper, "1999-06-28 18:40:22");
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	assertThat(timeSeries.getVersion()).isEqualTo(5);
     }
-    
-    
-    @Test
-    @Order(4)
-    public void upload_uncorrectJsonFieldName() {
-    	String jsonStringChanged = jsonString.replace('-', '$');
-    	RestAssured
-    	.given()
-    		.contentType(MediaType.APPLICATION_JSON_VALUE)
-    		.body(jsonStringChanged)
-    	.when().put("/timeseries/upload")
-    	.then().assertThat()
-    		.statusCode(HttpStatus.BAD_REQUEST.value())
-    		.body(containsString(TimeSeriesController.MSG_DATA_NOT_PARSERABLE));
-    }
-    
-    @Test
-    @Order(5)
-    public void upload_sameFile() {
-    	RestAssured
-    	.given()
-    		.contentType(MediaType.APPLICATION_JSON_VALUE)
-    		.body(jsonString)
-    	.when().put("/timeseries/upload")
-    	.then().assertThat()
-    		.statusCode(HttpStatus.BAD_REQUEST.value())
-    		.body(containsString(TimeSeriesController.MSG_DATA_NOT_NEW))
-    		.and()
-    		.body(containsString(TimeSeriesController.MSG_UNIQUEPOWERSTATIONDATETIMESTAMP_CV));
-    }
-    
-    @Test
-    @Order(6)
-    public void upload_NotNewFile() {
-    	String jsonStringChanged = jsonString.replace("1999-06-28 13:29:53", "1999-06-28 13:29:52");
-    	RestAssured
-    	.given()
-    		.contentType(MediaType.APPLICATION_JSON_VALUE)
-    		.body(jsonStringChanged)
-    	.when().put("/timeseries/upload")
-    	.then().assertThat()
-    		.statusCode(HttpStatus.BAD_REQUEST.value())
-    		.body(containsString(TimeSeriesController.MSG_DATA_NOT_NEW));
-    }
-    
-    
-	//@Test
-	public void upload_jsonFileMultipart() {
-		RestAssured
-		  .given()
-	         .param("timestamp", new Date().getTime())
-	         .multiPart("file", new File("C:\\workspace_peter.javaeclipse\\reg_homework\\sample_data\\ps_83_20210628_032953.json"))
-		  .when().put("/timeseries/upload").then()
-		  .statusCode(HttpStatus.OK.value());
+
+	/**
+	 * @param objectMapper
+	 * @return
+	 * @throws JsonProcessingException
+	 * @throws JsonMappingException
+	 */
+	private TimeSeries addOneTimeSeries(ObjectMapper objectMapper, String dateTimeString )
+			throws JsonProcessingException, JsonMappingException {
+		TimeSeries timeSeries;
+		timeSeries = objectMapper.readValue(jsonString, TimeSeries.class);
+		int newVersion = timeSeriesService.getFreeVersionNumber(timeSeries.getPowerStation(), timeSeries.getDate());
+		timeSeries.setVersion(newVersion);
+		timeSeries.setTimestamp(LocalDateTime.parse(dateTimeString, dateTimeFormatter));
+		timeSeries = timeSeriesRepository.save(timeSeries);
+		return timeSeries;
 	}
-	
+    
     @Test
     @Order(99)
     public void deleteTestTimeseriesRows() {
