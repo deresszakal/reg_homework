@@ -29,6 +29,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.reg.time_series.entity.TimeSeries;
 import com.reg.time_series.entity.TimeSeriesRepository;
 
@@ -132,14 +134,12 @@ public class TimeSeriesControllerTest {
     	.when().put("/timeseries/upload")
     	.then().assertThat()
     		.statusCode(HttpStatus.BAD_REQUEST.value())
-    		.body(containsString(TimeSeriesController.MSG_DATA_NOT_NEW))
-    		.and()
     		.body(containsString(TimeSeriesController.MSG_UNIQUEPOWERSTATIONDATETIMESTAMP_CV));
     }
     
     @Test
     @Order(6)
-    public void upload_NotNewFile() {
+    public void upload_OlderFile() {
     	String jsonStringChanged = jsonString.replace("1999-06-28 13:29:53", "1999-06-28 13:29:52");
     	RestAssured
     	.given()
@@ -149,6 +149,21 @@ public class TimeSeriesControllerTest {
     	.then().assertThat()
     		.statusCode(HttpStatus.BAD_REQUEST.value())
     		.body(containsString(TimeSeriesController.MSG_DATA_NOT_NEW));
+    }
+    
+    @Test
+    @Order(7)
+    public void upload_versionCollision() {
+    	String jsonStringChanged = jsonString.replace("\"period\": \"PT15M\",", "\"period\": \"PT15M\",\n\t\"version\": \"1\",");
+    	jsonStringChanged = jsonStringChanged.replace("1999-06-28 13:29:53", "1999-06-28 13:30:53");
+    	RestAssured
+    	.given()
+    	.contentType(MediaType.APPLICATION_JSON_VALUE)
+    	.body(jsonStringChanged)
+    	.when().put("/timeseries/upload")
+    	.then().assertThat()
+    	.statusCode(HttpStatus.BAD_REQUEST.value())
+    	.body(containsString(TimeSeriesController.MSG_UNIQUEPOWERSTATIONDATEVERSION_CV));
     }
     
     

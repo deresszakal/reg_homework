@@ -25,8 +25,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.reg.time_series.TimeSeriesApplication;
 import com.reg.time_series.entity.TimeSeries;
 import com.reg.time_series.entity.TimeSeriesRepository;
+import com.reg.time_series.sevice.ApplicationService;
 import com.reg.time_series.sevice.TimeSeriesService;
 
 import java.sql.SQLException;
@@ -46,7 +48,10 @@ public class TimeSeriesController {
 	public static final String MSG_DATA_NOT_PARSERABLE = "Data not parserable";
 	public static final String MSG_NO_DATA_RECEIVED = "No data received.";
 	public static final String MSG_DATA_NOT_NEW = "Data not new";
+	public static final String NAME_UNIQUEPOWERSTATIONDATETIMESTAMP_C = "UNIQUE_POWERSTATION_DATE_TIMESTAMP";
 	public static final String MSG_UNIQUEPOWERSTATIONDATETIMESTAMP_CV = "TIME_SERIES(POWERSTATION, DATE, TIMESTAMP) Constraint Violation";
+	public static final String NAME_UNIQUEPOWERSTATIONDATEVERSION_C = "UNIQUE_POWERSTATION_DATE_VERSION";
+	public static final String MSG_UNIQUEPOWERSTATIONDATEVERSION_CV = "TIME_SERIES(POWERSTATION, DATE, VERSION) Constraint Violation";
 	private static final Logger logger = LoggerFactory.getLogger(TimeSeriesController.class);
 	
 	@Autowired
@@ -54,6 +59,9 @@ public class TimeSeriesController {
 	
 	@Autowired
 	TimeSeriesService timeSeriesService;
+	
+	@Autowired
+	ApplicationService applicationService;
 	
 	@PutMapping(value = "/upload", consumes = { MediaType.APPLICATION_JSON_VALUE }, produces = {MediaType.APPLICATION_JSON_VALUE })
 	public ResponseEntity<String> uploadTimeSeries(@RequestBody String jsonString) {
@@ -68,8 +76,10 @@ public class TimeSeriesController {
 				timeSeries = objectMapper.readValue(jsonString, TimeSeries.class);
 				if (timeSeriesService.isTimeSeriesNewer(timeSeries)) {
 					resultOK = true;
-					int newVersion = timeSeriesService.getFreeVersionNumber(timeSeries.getPowerStation(), timeSeries.getDate());
-					timeSeries.setVersion(newVersion);
+					if (timeSeries.getVersion() == 0 ) {
+						int newVersion = timeSeriesService.getFreeVersionNumber(timeSeries.getPowerStation(), timeSeries.getDate());
+						timeSeries.setVersion(newVersion);
+					}
 					timeSeries = timeSeriesRepository.save(timeSeries);
 					message = timeSeries.toString();
 				} else {
@@ -82,7 +92,13 @@ public class TimeSeriesController {
 				message = MSG_DATA_NOT_PARSERABLE + ": " + (e1.getCause() == null ? e1.getMessage().substring(0, e1.getMessage().indexOf("(")) : e1.getCause().toString());
 			} catch (DataIntegrityViolationException e2) {
 				resultOK = false;
-				message = MSG_UNIQUEPOWERSTATIONDATETIMESTAMP_CV + ": " + timeSeries.toString() + ", " + timeSeries.getTimestamp();
+				if (e2.getMessage().contains(NAME_UNIQUEPOWERSTATIONDATETIMESTAMP_C)) {
+					message = MSG_UNIQUEPOWERSTATIONDATETIMESTAMP_CV + ": " + timeSeries.toString() + ", " + timeSeries.getTimestamp();
+				}
+				else if (e2.getMessage().contains(NAME_UNIQUEPOWERSTATIONDATEVERSION_C)) {
+					message = MSG_UNIQUEPOWERSTATIONDATEVERSION_CV + ": " + timeSeries.toString() + ", " + timeSeries.getTimestamp();
+				}
+				message += ": " + timeSeries.toString() + ", " + timeSeries.getTimestamp();
 			}
 		} else {
 			resultOK = false;

@@ -49,9 +49,6 @@ class TimeSeriesServiceTest {
     @Autowired
     TimeSeriesService timeSeriesService;
 
-    private static DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    
     @BeforeEach
     public void initAssuredMockMvcWebApplicationContext() {
         RestAssured.port = port;
@@ -61,7 +58,9 @@ class TimeSeriesServiceTest {
     @Test
     @Order(0)
     public void clean() {
-		Optional<List<TimeSeries>> finded = timeSeriesRepository.findByDateBetween(LocalDate.parse("1999-01-01", dateFormatter), LocalDate.parse("1999-12-31", dateFormatter));
+		Optional<List<TimeSeries>> finded = timeSeriesRepository.findByDateBetween(
+				LocalDate.parse("1999-01-01", TimeSeriesService.dateFormatter), 
+				LocalDate.parse("1999-12-31", TimeSeriesService.dateFormatter));
 		timeSeriesRepository.deleteAll(finded.get());
     }
     
@@ -112,30 +111,53 @@ class TimeSeriesServiceTest {
     	assertThat(timeSeries.getVersion()).isEqualTo(5);
     }
 
-	/**
-	 * @param objectMapper
-	 * @return
-	 * @throws JsonProcessingException
-	 * @throws JsonMappingException
-	 */
-	private TimeSeries addOneTimeSeries(ObjectMapper objectMapper, String dateTimeString )
-			throws JsonProcessingException, JsonMappingException {
-		TimeSeries timeSeries;
-		timeSeries = objectMapper.readValue(jsonString, TimeSeries.class);
-		int newVersion = timeSeriesService.getFreeVersionNumber(timeSeries.getPowerStation(), timeSeries.getDate());
-		timeSeries.setVersion(newVersion);
-		timeSeries.setTimestamp(LocalDateTime.parse(dateTimeString, dateTimeFormatter));
-		timeSeries = timeSeriesRepository.save(timeSeries);
-		return timeSeries;
-	}
+    @Test
+    @Order(3)
+    public void calculteSafetyWindowEnd_MiddleOfTheDay() {
+	    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    	LocalDateTime start = LocalDateTime.parse("1999-06-28 13:29:53", dateTimeFormatter);
+    	LocalDateTime end = LocalDateTime.parse("1999-06-28 15:00:00", dateTimeFormatter);
+    	LocalDateTime safetyWindowEnd = timeSeriesService.calculateSafetyWindowEnd(start);
+    	assertThat(safetyWindowEnd).isEqualTo(end);
+    }
+
+    @Test
+    @Order(4)
+    public void calculteSafetyWindowEnd_closeToMidnight() {
+    	LocalDateTime start = LocalDateTime.parse("1999-06-28 23:29:53", TimeSeriesService.dateTimeFormatter);
+    	LocalDateTime end = LocalDateTime.parse("1999-06-29 00:00:00", TimeSeriesService.dateTimeFormatter);
+    	LocalDateTime safetyWindowEnd = timeSeriesService.calculateSafetyWindowEnd(start);
+    	assertThat(safetyWindowEnd).isEqualTo(end);
+    }
+    
     
     @Test
     @Order(99)
     public void deleteTestTimeseriesRows() {
-		Optional<List<TimeSeries>> finded = timeSeriesRepository.findByDateBetween(LocalDate.parse("1999-01-01", dateFormatter), LocalDate.parse("1999-12-31", dateFormatter));
+		Optional<List<TimeSeries>> finded = timeSeriesRepository.findByDateBetween(
+				LocalDate.parse("1999-01-01", TimeSeriesService.dateFormatter), 
+				LocalDate.parse("1999-12-31", TimeSeriesService.dateFormatter));
 		timeSeriesRepository.deleteAll(finded.get());
     }
     
+    /**
+     * @param objectMapper
+     * @return
+     * @throws JsonProcessingException
+     * @throws JsonMappingException
+     */
+    private TimeSeries addOneTimeSeries(ObjectMapper objectMapper, String dateTimeString )
+    		throws JsonProcessingException, JsonMappingException {
+    	TimeSeries timeSeries;
+    	timeSeries = objectMapper.readValue(jsonString, TimeSeries.class);
+    	int newVersion = timeSeriesService.getFreeVersionNumber(timeSeries.getPowerStation(), timeSeries.getDate());
+    	timeSeries.setVersion(newVersion);
+    	timeSeries.setTimestamp(LocalDateTime.parse(dateTimeString, TimeSeriesService.dateTimeFormatter));
+    	timeSeries = timeSeriesRepository.save(timeSeries);
+    	return timeSeries;
+    }
+    
+
     private String jsonString =
         	"""
     		 {

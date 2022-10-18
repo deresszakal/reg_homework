@@ -33,8 +33,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(uniqueConstraints = {
-		   @UniqueConstraint(name = "UniquePowerstationDateTimestamp", columnNames = {"powerstation", "date", "timestamp"}),
-		   @UniqueConstraint(name = "UniquePowerstationDateVerzion", columnNames = {"powerstation", "date", "version"})
+		   @UniqueConstraint(name = "Unique_Powerstation_Date_Timestamp", columnNames = {"powerstation", "date", "timestamp"}),
+		   @UniqueConstraint(name = "Unique_Powerstation_Date_Version", columnNames = {"powerstation", "date", "version"})
 	   })
 public class TimeSeries {
 	
