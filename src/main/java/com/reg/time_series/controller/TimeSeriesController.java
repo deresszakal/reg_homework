@@ -92,10 +92,10 @@ public class TimeSeriesController {
 				message = MSG_DATA_NOT_PARSERABLE + ": " + (e1.getCause() == null ? e1.getMessage().substring(0, e1.getMessage().indexOf("(")) : e1.getCause().toString());
 			} catch (DataIntegrityViolationException e2) {
 				resultOK = false;
-				if (e2.getMessage().contains(NAME_UNIQUEPOWERSTATIONDATETIMESTAMP_C)) {
+				if (e2.getMessage().toLowerCase().contains(NAME_UNIQUEPOWERSTATIONDATETIMESTAMP_C.toLowerCase())) {
 					message = MSG_UNIQUEPOWERSTATIONDATETIMESTAMP_CV + ": " + timeSeries.toString() + ", " + timeSeries.getTimestamp();
 				}
-				else if (e2.getMessage().contains(NAME_UNIQUEPOWERSTATIONDATEVERSION_C)) {
+				else if (e2.getMessage().toLowerCase().contains(NAME_UNIQUEPOWERSTATIONDATEVERSION_C.toLowerCase())) {
 					message = MSG_UNIQUEPOWERSTATIONDATEVERSION_CV + ": " + timeSeries.toString() + ", " + timeSeries.getTimestamp();
 				}
 				message += ": " + timeSeries.toString() + ", " + timeSeries.getTimestamp();

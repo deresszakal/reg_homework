@@ -1,0 +1,50 @@
+version: "3.7"
+services:
+      
+  mysql-server:
+    build:
+      dockerfile: sql.Dockerfile    
+      context: .
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: reg
+      MYSQL_PASSWORD: reg
+    ports:
+      - "3306:3306"     
+    volumes:
+      - "./mysql_data:/var/lib/mysql"
+    healthcheck:
+            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+            timeout: 20s
+            retries: 10
+    networks:
+          ts_network:
+
+  phpmyadmin:
+    build:
+      dockerfile: phpmyadmin.Dockerfile    
+      context: .
+    restart: always
+    environment:
+      PMA_HOST: mysql-server
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - "5000:80"
+    depends_on:
+      mysql-server:
+        condition: service_healthy
+    networks:
+          ts_network:
+       
+volumes:
+  mysql_data:
+  
+networks:
+  ts_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.99.0.0/16  
