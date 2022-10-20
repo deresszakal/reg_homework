@@ -35,3 +35,4 @@ mvnw.cmd
 /frontend/time-series-app/node_modules/
 testdb.mv.db
 /docker/reghw/mysql_data/
+/reszli/
