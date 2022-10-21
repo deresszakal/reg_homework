@@ -4,7 +4,6 @@ services:
   mysql-server:
     build:
       dockerfile: sql.Dockerfile
-#      dockerfile: mariadb.Dockerfile      
       context: .
     restart: always
     environment:
@@ -46,6 +45,11 @@ services:
     restart: always
     ports:
       - "3000:3999"
+    healthcheck:
+        test: ["CMD", "curl", "--fail", "http://localhost:3999", "||", "exit", "1"]
+        timeout: 3s
+        retries: 5
+        interval: 4s
     depends_on:
       mysql-server:
         condition: service_healthy
