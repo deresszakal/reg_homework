@@ -34,5 +34,7 @@ mvnw.cmd
 /sample_data/
 /frontend/time-series-app/node_modules/
 testdb.mv.db
+testdb.trace.db
+start.bat
 /docker/reghw/mysql_data/
 /reszli/
