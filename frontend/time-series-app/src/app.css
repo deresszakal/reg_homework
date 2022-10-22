@@ -1,0 +1,10 @@
+.base_panel {
+	margin: auto;
+	width: 60%;
+	padding: 10px;
+}
+
+.panel_button {
+	width: 300px !important;
+	height: 30px !important;
+}
