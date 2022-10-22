@@ -11,10 +11,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -29,6 +31,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.reg.time_series.entity.TimeSeries;
@@ -36,6 +40,10 @@ import com.reg.time_series.entity.TimeSeriesRepository;
 
 import io.restassured.RestAssured;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
+import io.restassured.response.Response;
+import io.restassured.response.ResponseBody;
+import io.restassured.specification.RequestSpecification;
+
 import static org.hamcrest.CoreMatchers.containsString;
 
 /**
@@ -166,6 +174,49 @@ public class TimeSeriesControllerTest {
     	.body(containsString(TimeSeriesController.MSG_UNIQUEPOWERSTATIONDATEVERSION_CV));
     }
     
+    @Test
+    @Order(8)
+    public void getTimeSeriesByPowerstaton_oneKind() {
+//    	RequestSpecification httpRequest = RestAssured.given();
+//    	Response response = httpRequest.get("/timeseries/powerstations");
+//    	ResponseBody body = response.getBody();
+//    	ArrayList<TimeSeries> tsl = body.as(ArrayList.class);
+//    	System.out.println("TimeSeriesControllerTest.getTimeSeriesByPowerstaton(): " + tsl.size());
+        RestAssured
+        .when().get("/timeseries/powerstations")
+        .then().assertThat()
+        	.statusCode(HttpStatus.OK.value())
+        	.body("$", Matchers.hasSize(1));
+    }
+
+    @Test
+    @Order(9)
+    public void getTimeSeriesByPowerstaton_threeKind() throws JsonMappingException, JsonProcessingException {
+    	String jsonStringChanged = jsonString.replace("Naperőmű 2021 Kft. Iborfia", "Naperőmű Test1");
+    	timeSeriesRepository.save(createTimeSeries(jsonStringChanged));
+    	jsonStringChanged = jsonString.replace("Naperőmű 2021 Kft. Iborfia", "Naperőmű Test2");
+    	timeSeriesRepository.save(createTimeSeries(jsonStringChanged));
+    	RestAssured
+    	.when().get("/timeseries/powerstations")
+    	.then().assertThat()
+    	.statusCode(HttpStatus.OK.value())
+    	.body("$", Matchers.hasSize(3));
+    }
+    
+    
+    @Test
+    @Order(10)
+    public void getTimeSeriesByPowerstatonAndDate() throws JsonMappingException, JsonProcessingException {
+    	String jsonStringChanged = jsonString.replace("1999-06-28 13:29:53", "1999-06-28 21:30:53");
+    	TimeSeries timeSeries = timeSeriesRepository.save(createTimeSeries(jsonStringChanged));
+    	timeSeries.setVersion(99);
+    	timeSeriesRepository.save(timeSeries);
+    	RestAssured
+    	.when().get("/timeseries/datesbypowerstationanddate?powerstation=Naperőmű 2021 Kft. Iborfia&date=1999-06-28")
+    	.then().assertThat()
+    	.statusCode(HttpStatus.OK.value())
+    	.body("$", Matchers.hasSize(2));
+    }
     
 	//@Test
 	public void upload_jsonFileMultipart() {
@@ -182,6 +233,13 @@ public class TimeSeriesControllerTest {
     public void deleteTestTimeseriesRows() {
 		Optional<List<TimeSeries>> finded = timeSeriesRepository.findByDateBetween(LocalDate.parse("1999-01-01", dateFormatter), LocalDate.parse("1999-12-31", dateFormatter));
 		timeSeriesRepository.deleteAll(finded.get());
+    }
+    
+    private TimeSeries createTimeSeries(String jsonString) throws JsonMappingException, JsonProcessingException {
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new JavaTimeModule());
+		TimeSeries timeSeries = objectMapper.readValue(jsonString, TimeSeries.class);
+		return timeSeries;
     }
     
     private String jsonString =

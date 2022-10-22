@@ -2,6 +2,9 @@ package com.reg.time_series.controller;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.PersistenceException;
@@ -15,10 +18,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,6 +58,7 @@ public class TimeSeriesController {
 	public static final String NAME_UNIQUEPOWERSTATIONDATEVERSION_C = "UNIQUE_POWERSTATION_DATE_VERSION";
 	public static final String MSG_UNIQUEPOWERSTATIONDATEVERSION_CV = "TIME_SERIES(POWERSTATION, DATE, VERSION) Constraint Violation";
 	private static final Logger logger = LoggerFactory.getLogger(TimeSeriesController.class);
+    private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 	
 	@Autowired
 	private TimeSeriesRepository timeSeriesRepository;
@@ -136,5 +142,44 @@ public class TimeSeriesController {
 		}
         return ResponseEntity.ok().build();
     }
+    
+    @GetMapping("/powerstations")
+    public List<TimeSeries> getPowerstations() {
+    	Optional<List<TimeSeries>> sqlResult = timeSeriesRepository.findGroupByPowerStation();
+    	List<TimeSeries> result = null;
+    	if (sqlResult.isPresent()) {
+			result = sqlResult.get();
+		} else {
+			result = Collections.emptyList();
+		}
+    	return result;
+	}
 
+    @GetMapping("/datesbypowerstation")
+    @ResponseBody
+    public List<TimeSeries> getDatesByPowerstation(@RequestParam(name = "powerstation") String powerStation) {
+    	Optional<List<TimeSeries>> sqlResult = timeSeriesRepository.findByPowerStation(powerStation);
+    	List<TimeSeries> result = null;
+    	if (sqlResult.isPresent()) {
+    		result = sqlResult.get();
+    	} else {
+    		result = Collections.emptyList();
+    	}
+    	return result;
+    }
+    
+    @GetMapping("/datesbypowerstationanddate")
+    @ResponseBody
+    public List<TimeSeries> getDatesByPowerstationAndDate(@RequestParam(name = "powerstation") String powerStation, @RequestParam(name = "date") String dateString ) {
+    	LocalDate date = LocalDate.parse(dateString, dateFormatter);
+    	Optional<List<TimeSeries>> sqlResult = timeSeriesRepository.findByPowerStationAndDate(powerStation, date);
+    	List<TimeSeries> result = null;
+    	if (sqlResult.isPresent()) {
+    		result = sqlResult.get();
+    	} else {
+    		result = Collections.emptyList();
+    	}
+    	return result;
+    }
+    
 }
