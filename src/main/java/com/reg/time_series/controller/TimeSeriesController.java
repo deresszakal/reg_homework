@@ -7,10 +7,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import javax.persistence.PersistenceException;
-import javax.persistence.PrePersist;
-
-import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,15 +26,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.reg.time_series.TimeSeriesApplication;
 import com.reg.time_series.entity.TimeSeries;
 import com.reg.time_series.entity.TimeSeriesRepository;
 import com.reg.time_series.sevice.ApplicationService;
 import com.reg.time_series.sevice.TimeSeriesService;
-
-import java.sql.SQLException;
-import java.sql.SQLIntegrityConstraintViolationException;
-import org.springframework.dao.DataIntegrityViolationException;
 
 
 /**
@@ -134,7 +125,8 @@ public class TimeSeriesController {
     	};
     	ObjectMapper objectMapper = new ObjectMapper();
     	objectMapper.registerModule(new JavaTimeModule());
-    	TimeSeries timeSeries = null;
+    	@SuppressWarnings("unused")
+		TimeSeries timeSeries = null;
     	try {
 			timeSeries = objectMapper.readValue(jsonString, TimeSeries.class);
 		} catch (JsonProcessingException e) {
@@ -158,7 +150,7 @@ public class TimeSeriesController {
     @GetMapping("/datesbypowerstation")
     @ResponseBody
     public List<TimeSeries> getDatesByPowerstation(@RequestParam(name = "powerstation") String powerStation) {
-    	Optional<List<TimeSeries>> sqlResult = timeSeriesRepository.findByPowerStation(powerStation);
+    	Optional<List<TimeSeries>> sqlResult = timeSeriesRepository.findPowerStationByPowerStationGroupByDate(powerStation);
     	List<TimeSeries> result = null;
     	if (sqlResult.isPresent()) {
     		result = sqlResult.get();

@@ -3,15 +3,12 @@
  */
 package com.reg.time_series.controller;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +22,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -40,11 +37,6 @@ import com.reg.time_series.entity.TimeSeriesRepository;
 
 import io.restassured.RestAssured;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
-import io.restassured.response.Response;
-import io.restassured.response.ResponseBody;
-import io.restassured.specification.RequestSpecification;
-
-import static org.hamcrest.CoreMatchers.containsString;
 
 /**
  * @author phars
@@ -176,41 +168,49 @@ public class TimeSeriesControllerTest {
     
     @Test
     @Order(8)
-    public void getTimeSeriesByPowerstaton_oneKind() {
-//    	RequestSpecification httpRequest = RestAssured.given();
-//    	Response response = httpRequest.get("/timeseries/powerstations");
-//    	ResponseBody body = response.getBody();
-//    	ArrayList<TimeSeries> tsl = body.as(ArrayList.class);
-//    	System.out.println("TimeSeriesControllerTest.getTimeSeriesByPowerstaton(): " + tsl.size());
+    public void getPowerstatons_oneKind() {
+    	int allCount = geSize(timeSeriesRepository.findGroupByPowerStation()); 
         RestAssured
         .when().get("/timeseries/powerstations")
         .then().assertThat()
         	.statusCode(HttpStatus.OK.value())
-        	.body("$", Matchers.hasSize(1));
+        	.body("$", Matchers.hasSize(allCount));
     }
 
     @Test
     @Order(9)
-    public void getTimeSeriesByPowerstaton_threeKind() throws JsonMappingException, JsonProcessingException {
+    public void getPowerstaton_threeKind() throws JsonMappingException, JsonProcessingException {
     	String jsonStringChanged = jsonString.replace("Naperőmű 2021 Kft. Iborfia", "Naperőmű Test1");
     	timeSeriesRepository.save(createTimeSeries(jsonStringChanged));
     	jsonStringChanged = jsonString.replace("Naperőmű 2021 Kft. Iborfia", "Naperőmű Test2");
     	timeSeriesRepository.save(createTimeSeries(jsonStringChanged));
+    	int allCount = geSize(timeSeriesRepository.findGroupByPowerStation()); 
     	RestAssured
     	.when().get("/timeseries/powerstations")
     	.then().assertThat()
     	.statusCode(HttpStatus.OK.value())
-    	.body("$", Matchers.hasSize(3));
+    	.body("$", Matchers.hasSize(allCount));
     }
     
     
     @Test
     @Order(10)
-    public void getTimeSeriesByPowerstatonAndDate() throws JsonMappingException, JsonProcessingException {
+    public void getTimeSeriesByPowerstaton() throws JsonMappingException, JsonProcessingException {
     	String jsonStringChanged = jsonString.replace("1999-06-28 13:29:53", "1999-06-28 21:30:53");
     	TimeSeries timeSeries = timeSeriesRepository.save(createTimeSeries(jsonStringChanged));
     	timeSeries.setVersion(99);
     	timeSeriesRepository.save(timeSeries);
+    	int count = geSize(timeSeriesRepository.findPowerStationByPowerStationGroupByDate("Naperőmű 2021 Kft. Iborfia")); 
+    	RestAssured
+    	.when().get("/timeseries/datesbypowerstation?powerstation=Naperőmű 2021 Kft. Iborfia")
+    	.then().assertThat()
+    	.statusCode(HttpStatus.OK.value())
+    	.body("$", Matchers.hasSize(count));
+    }
+    
+    @Test
+    @Order(11)
+    public void getTimeSeriesByPowerstatonAndDate() throws JsonMappingException, JsonProcessingException {
     	RestAssured
     	.when().get("/timeseries/datesbypowerstationanddate?powerstation=Naperőmű 2021 Kft. Iborfia&date=1999-06-28")
     	.then().assertThat()
@@ -240,6 +240,14 @@ public class TimeSeriesControllerTest {
 		objectMapper.registerModule(new JavaTimeModule());
 		TimeSeries timeSeries = objectMapper.readValue(jsonString, TimeSeries.class);
 		return timeSeries;
+    }
+    
+    private int geSize(Optional<List<TimeSeries>> optional) {
+    	int result = 0;
+    	if (optional.isPresent()) {
+			result = optional.get().size();
+		}
+    	return result;
     }
     
     private String jsonString =
@@ -352,3 +360,11 @@ public class TimeSeriesControllerTest {
            """;
 
 }
+
+// hiba kereséshez
+//RequestSpecification httpRequest = RestAssured.given();
+//Response response = httpRequest.get("/timeseries/powerstations");
+//ResponseBody body = response.getBody();
+//ArrayList<TimeSeries> tsl = body.as(ArrayList.class);
+//System.out.println("TimeSeriesControllerTest.getTimeSeriesByPowerstaton(): " + tsl.size());
+

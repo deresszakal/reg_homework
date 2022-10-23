@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -23,6 +24,12 @@ public interface TimeSeriesRepository extends CrudRepository<TimeSeries, Long> {
 	
 	@Query(nativeQuery = true, value = "SELECT * FROM time_series GROUP by powerstation")
 	Optional<List<TimeSeries>> findGroupByPowerStation();
+	
+	@Query(nativeQuery = true, value = "SELECT * FROM time_series where date != :date GROUP BY powerstation")
+	Optional<List<TimeSeries>>  findPowerStationByDateGroupByPowerStation(@Param("date") String date);
+	
+	@Query(nativeQuery = true, value = "SELECT * FROM time_series where powerstation = :powerstation GROUP BY date")
+	Optional<List<TimeSeries>>  findPowerStationByPowerStationGroupByDate(@Param("powerstation") String powerstation);
 	
 	Optional<List<TimeSeries>> findByPowerStation(String powerstation);
 
