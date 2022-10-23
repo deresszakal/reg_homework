@@ -59,9 +59,28 @@ public class TimeSeriesController {
 	
 	@Autowired
 	ApplicationService applicationService;
-	
+
 	@PutMapping(value = "/upload", consumes = { MediaType.APPLICATION_JSON_VALUE }, produces = {MediaType.APPLICATION_JSON_VALUE })
 	public ResponseEntity<String> uploadTimeSeries(@RequestBody String jsonString) {
+		return uploadInner(jsonString);
+	}
+	
+    @PutMapping(value ="/uploadmultipart", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
+    public ResponseEntity<String> uploadTimeSeries(@RequestParam("file") MultipartFile file) {
+    	String jsonString = null;
+    	if (!file.isEmpty()) {
+    	    byte[] bytes = null;
+			try {
+				bytes = file.getBytes();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    	    jsonString = new String(bytes);
+    	};
+    	return uploadInner(jsonString);
+    }
+    
+	public ResponseEntity<String> uploadInner(String jsonString) {
 		boolean resultOK = true;
 		ResponseEntity<String> responseEntity = null;
 		String message = "";
@@ -111,30 +130,6 @@ public class TimeSeriesController {
 		return responseEntity;
 	}
 
-    @PutMapping(value ="/uploadmultipart", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity<Void> uploadTimeSeries(@RequestParam("file") MultipartFile file) {
-    	String jsonString = null;
-    	if (!file.isEmpty()) {
-    	    byte[] bytes = null;
-			try {
-				bytes = file.getBytes();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-    	    jsonString = new String(bytes);
-    	};
-    	ObjectMapper objectMapper = new ObjectMapper();
-    	objectMapper.registerModule(new JavaTimeModule());
-    	@SuppressWarnings("unused")
-		TimeSeries timeSeries = null;
-    	try {
-			timeSeries = objectMapper.readValue(jsonString, TimeSeries.class);
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-		}
-        return ResponseEntity.ok().build();
-    }
-    
     @GetMapping("/powerstations")
     public List<TimeSeries> getPowerstations() {
     	Optional<List<TimeSeries>> sqlResult = timeSeriesRepository.findGroupByPowerStation();

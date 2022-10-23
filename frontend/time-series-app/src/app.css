@@ -8,3 +8,8 @@
 	width: 300px !important;
 	height: 30px !important;
 }
+
+.spacer_25 {
+	display:inline-block; 
+	width:25px;
+}
