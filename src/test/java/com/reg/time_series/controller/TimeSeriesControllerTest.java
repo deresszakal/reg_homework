@@ -212,7 +212,7 @@ public class TimeSeriesControllerTest {
     @Order(11)
     public void getTimeSeriesByPowerstatonAndDate() throws JsonMappingException, JsonProcessingException {
     	RestAssured
-    	.when().get("/timeseries/datesbypowerstationanddate?powerstation=Naperőmű 2021 Kft. Iborfia&date=1999-06-28")
+    	.when().get("/timeseries/seriesbypowerstationanddate?powerstation=Naperőmű 2021 Kft. Iborfia&date=1999-06-28")
     	.then().assertThat()
     	.statusCode(HttpStatus.OK.value())
     	.body("$", Matchers.hasSize(2));

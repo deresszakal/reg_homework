@@ -155,14 +155,15 @@ public class TimeSeriesController {
     	return result;
     }
     
-    @GetMapping("/datesbypowerstationanddate")
+    @GetMapping("/seriesbypowerstationanddate")
     @ResponseBody
-    public List<TimeSeries> getDatesByPowerstationAndDate(@RequestParam(name = "powerstation") String powerStation, @RequestParam(name = "date") String dateString ) {
+    public List<TimeSeries> getSeriesByPowerstationAndDate(@RequestParam(name = "powerstation") String powerStation, @RequestParam(name = "date") String dateString ) {
     	LocalDate date = LocalDate.parse(dateString, dateFormatter);
     	Optional<List<TimeSeries>> sqlResult = timeSeriesRepository.findByPowerStationAndDate(powerStation, date);
     	List<TimeSeries> result = null;
     	if (sqlResult.isPresent()) {
     		result = sqlResult.get();
+    		result = timeSeriesService.mergeTimeseriesData(result);
     	} else {
     		result = Collections.emptyList();
     	}

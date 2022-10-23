@@ -1,9 +1,12 @@
 package com.reg.time_series.sevice;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import com.reg.time_series.entity.TimeSeries;
 import com.reg.time_series.entity.TimeSeriesRepository;
+
 
 /**
  * @author phars
@@ -27,6 +31,7 @@ public class TimeSeriesService {
 	
     public static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     public static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    
 
 	public int getFreeVersionNumber(String powerStation, LocalDate date ) {
 		Optional<TimeSeries> result = timeSeriesRepository.findFirstByPowerStationAndDateOrderByVersionDesc(powerStation, date);
@@ -50,15 +55,66 @@ public class TimeSeriesService {
 	}
 	
 	public LocalDateTime calculateSafetyWindowEnd(LocalDateTime start) {
-		int safetyWindowSize = applicationService.getSafetyWindowSizeInMinutes();
 		int timeSlice = applicationService.getTimeSlice();
-		LocalDateTime end = start.plusMinutes(safetyWindowSize);
-		LocalDateTime nextSliced = end.truncatedTo(ChronoUnit.HOURS).plusMinutes(timeSlice * ((end.getMinute() / timeSlice)+1));
-		boolean sameDay = dateFormatter.format(start).equals(dateFormatter.format(nextSliced));
-		if (!sameDay) {
-			nextSliced = nextSliced.minusDays(1).truncatedTo(ChronoUnit.DAYS).plusMinutes(24*60);
+		int safetyWindowSizeInMinutes = applicationService.getSafetyWindowSizeInMinutes();
+		LocalDateTime end = start.plusMinutes(safetyWindowSizeInMinutes);
+		LocalDateTime nextSlice = null;
+		if (isExactSlice(end)) {
+			nextSlice = end;
 		}
-		return nextSliced;
+		else {
+			nextSlice = end.truncatedTo(ChronoUnit.HOURS).plusMinutes(timeSlice * ((end.getMinute() / timeSlice)+1));
+		}
+		boolean sameDay = dateFormatter.format(start).equals(dateFormatter.format(nextSlice));
+		if (!sameDay) {
+			nextSlice = nextSlice.minusDays(1).truncatedTo(ChronoUnit.DAYS).plusMinutes(24*60);
+		}
+		return nextSlice;
+	}
+	
+	public boolean isExactSlice(LocalDateTime dateTime) {
+		boolean result = false;
+		int timeSlice = applicationService.getTimeSlice();
+		long minutesFromMidnight = Duration.between(dateTime, dateTime.truncatedTo(ChronoUnit.DAYS)).toMinutes();
+		if (minutesFromMidnight % timeSlice == 0) {
+			result = true;
+		}
+		return result;
+	}
+	
+	public int convertDatetimeToIndex(LocalDateTime dateTime) {
+		int result = -1;
+		int timeSlice = applicationService.getTimeSlice();
+		LocalDateTime nextSlice = dateTime;
+		if (!isExactSlice(dateTime)) {
+			nextSlice = dateTime.truncatedTo(ChronoUnit.HOURS).plusMinutes(timeSlice * ((dateTime.getMinute() / timeSlice)+1));
+		}
+		Duration duration = Duration.between(dateTime.truncatedTo(ChronoUnit.DAYS), nextSlice);
+		int minutes = ((Long)duration.toMinutes()).intValue();
+		result = minutes / timeSlice;
+		return result;
+	}
+	
+	public LocalDateTime convertIndexToDatetime(int index, LocalDateTime dateTime) {
+		LocalDateTime result = null;
+		int timeSlice = applicationService.getTimeSlice();
+		result = dateTime.truncatedTo(ChronoUnit.DAYS).plusMinutes(timeSlice * index);
+		return result;
+	}
+	
+	public List<TimeSeries> mergeTimeseriesData(List<TimeSeries> inputTimeSeries) {
+//		ArrayList<TimeSeries> result = new ArrayList<>(List.copyOf(inputTimeSeries)); Az elemek csak bemásolódtak :(
+		ArrayList<TimeSeries> result = (ArrayList<TimeSeries>)inputTimeSeries;
+		for (int i=1; i<=result.size()-1; i++) {
+			ArrayList<Long> beforeSeries = result.get(i-1).getSeries();
+			ArrayList<Long> aktSeries = result.get(i).getSeries();
+			LocalDateTime safetyWindowEnd = calculateSafetyWindowEnd(result.get(i).getTimestamp());
+			int end = convertDatetimeToIndex(safetyWindowEnd);
+			for (int j=0; j<=end; j++) {
+				aktSeries.set(j, beforeSeries.get(j));
+			}
+		}
+		return result;
 	}
 	
 	public static void main(String[] args) {

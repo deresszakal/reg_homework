@@ -11,6 +11,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -45,6 +46,11 @@ public class TimeSeries {
     @JsonProperty("power-station")
     @Column(name = "powerstation")
 	String powerStation;
+    
+    
+    @JsonProperty("powerstation")
+    @Transient
+    String pst;
 
     LocalDate date;
 	
@@ -70,6 +76,14 @@ public class TimeSeries {
 		sb.append("; ");
 		sb.append(getVersion());
 		return sb.toString();
+	}
+	
+	public void setPst(String pst) {
+		powerStation = pst;
+	}
+	
+	public String getPst() {
+		return powerStation;
 	}
 
 //	@PrePersist
