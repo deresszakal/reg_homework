@@ -1,7 +1,6 @@
 package com.reg.time_series.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 import java.time.LocalDate;
@@ -203,8 +202,6 @@ class TimeSeriesServiceTest {
     		inputList.add(timeSeries);
     	}
     	List<TimeSeries> merged = timeSeriesService.mergeTimeseriesData(inputList);
-    	long v1 = merged.get(1).getSeries().get(0);
-    	long v2 = merged.get(1).getSeries().get(maxIndex);
     	SoftAssertions assertions = new SoftAssertions();
     	assertions.assertThat(merged.get(2).getSeries().get(0)).isEqualTo(testValue1);
     	assertions.assertThat(merged.get(2).getSeries().get(maxIndex)).isNotEqualTo(testValue2);

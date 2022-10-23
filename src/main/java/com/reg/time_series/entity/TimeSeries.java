@@ -86,18 +86,4 @@ public class TimeSeries {
 		return powerStation;
 	}
 
-//	@PrePersist
-//	public void onPrePersist() {
-//		 
-//
-////		 Optional<TimeSeries> result = timeSeriesRepository.findFirsByPowerstationAndDateOrderByVersion(getPowerStation(), getDate().toString());
-////		Optional<TimeSeries> r1 = timeSeriesRepository.findByPowerStation(getPowerStation());
-////		Optional<TimeSeries> r2 = timeSeriesRepository.findByDate(getDate().toString());
-////		Optional<TimeSeries> r2 = timeSeriesRepository.findByZone(getZone());
-////		Optional<TimeSeries> r2 = timeSeriesRepository.findOne();
-//		int i = TimeSeriesService.getInstance().getNextVersion(powerStation, date );
-//		 
-//		 System.out.println("TimeSeries.onPrePersist()" );
-//	 }
-    
 }

@@ -117,24 +117,4 @@ public class TimeSeriesService {
 		return result;
 	}
 	
-	public static void main(String[] args) {
-	    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-		LocalDateTime ldt1 = LocalDateTime.parse("1999-06-28 13:29:53", dateTimeFormatter);
-		LocalDateTime ldt2 = LocalDateTime.parse("1999-06-28 13:29:53", dateTimeFormatter);
-		LocalDateTime ldt3 = LocalDateTime.parse("1999-06-28 13:29:52", dateTimeFormatter);
-		
-		System.out.println( ldt1.toString() + "; "+ ldt2.toString() + "; after;  " + ldt1.isAfter(ldt2));
-		System.out.println( ldt1.toString() + "; "+ ldt2.toString() + "; before; " + ldt1.isBefore(ldt2));
-		System.out.println( ldt1.toString() + "; "+ ldt2.toString() + "; equal;  " + ldt1.isEqual(ldt2));
-		System.out.println("");
-		System.out.println( ldt1.toString() + "; "+ ldt3.toString() + "; after;  " + ldt1.isAfter(ldt3));
-		System.out.println( ldt1.toString() + "; "+ ldt3.toString() + "; before; " + ldt1.isBefore(ldt3));
-		System.out.println( ldt1.toString() + "; "+ ldt3.toString() + "; equal;  " + ldt1.isEqual(ldt3));
-		System.out.println("");
-		System.out.println( ldt3.toString() + "; "+ ldt1.toString() + "; after;  " + ldt3.isAfter(ldt1));
-		System.out.println( ldt3.toString() + "; "+ ldt1.toString() + "; before; " + ldt3.isBefore(ldt1));
-		System.out.println( ldt3.toString() + "; "+ ldt1.toString() + "; equal;  " + ldt3.isEqual(ldt1));
-		System.out.println("");
-	}
-	
 }

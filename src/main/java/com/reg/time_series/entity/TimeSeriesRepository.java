@@ -35,6 +35,4 @@ public interface TimeSeriesRepository extends CrudRepository<TimeSeries, Long> {
 
 	Optional<List<TimeSeries>> findByPowerStationAndDate(String powerstation, LocalDate date);
 	
-//	Long deleteByDateBetween(LocalDate from, LocalDate to);
-
 }
