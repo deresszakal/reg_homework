@@ -20,6 +20,7 @@ services:
             retries: 10
     networks:
           ts_network:
+            ipv4_address: 172.99.0.99
 
   phpmyadmin:
     build:
@@ -55,6 +56,20 @@ services:
         condition: service_healthy
     networks:
           ts_network:
+          
+  backend:
+    build:
+      dockerfile: docker/reghw/backend.Dockerfile    
+      context: ../../
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql-server:
+        condition: service_healthy
+    networks:
+          ts_network:
+       
        
 volumes:
   mysql_data:
