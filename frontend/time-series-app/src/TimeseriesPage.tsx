@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { TimeseriesUpload } from './TimeseriesUpload';
+import { TimeseriesView } from './TimeseriesView';
 
 
 export const TimeseriesPage = () => {
@@ -24,6 +25,8 @@ export const TimeseriesPage = () => {
 			<h1>Timeseries Page</h1>
 
 			<TimeseriesUpload />
+			<hr />
+			<TimeseriesView />
 
 			<hr />
 			<button
