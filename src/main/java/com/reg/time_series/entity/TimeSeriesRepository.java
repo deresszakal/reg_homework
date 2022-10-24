@@ -33,6 +33,6 @@ public interface TimeSeriesRepository extends CrudRepository<TimeSeries, Long> {
 	
 	Optional<List<TimeSeries>> findByPowerStation(String powerstation);
 
-	Optional<List<TimeSeries>> findByPowerStationAndDate(String powerstation, LocalDate date);
+	Optional<List<TimeSeries>> findByPowerStationAndDateOrderByVersion(String powerstation, LocalDate date);
 	
 }

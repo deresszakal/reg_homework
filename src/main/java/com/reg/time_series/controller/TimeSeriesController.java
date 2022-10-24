@@ -159,7 +159,7 @@ public class TimeSeriesController {
     @ResponseBody
     public List<TimeSeries> getSeriesByPowerstationAndDate(@RequestParam(name = "powerstation") String powerStation, @RequestParam(name = "date") String dateString ) {
     	LocalDate date = LocalDate.parse(dateString, dateFormatter);
-    	Optional<List<TimeSeries>> sqlResult = timeSeriesRepository.findByPowerStationAndDate(powerStation, date);
+    	Optional<List<TimeSeries>> sqlResult = timeSeriesRepository.findByPowerStationAndDateOrderByVersion(powerStation, date);
     	List<TimeSeries> result = null;
     	if (sqlResult.isPresent()) {
     		result = sqlResult.get();
